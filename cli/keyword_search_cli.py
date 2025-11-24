@@ -2,14 +2,22 @@
 
 import argparse
 import json
+import string
 
 def search_movies(query: str) -> None:
     print(f'Searching for: {query}')
     with open('data/movies.json', 'r') as f:
         movies = json.load(f)
         matches = []
+
+        # this translation strips the punctuation
+        translator = str.maketrans('', '', string.punctuation)
+
+        # iterate over movies in movie list
         for movie in movies['movies']:
-            if query in movie['title']:
+            q = query.translate(translator).lower().split()
+            m = movie['title'].translate(translator).lower().split()
+            if any(token in m for token in q):
                 matches.append(movie)
         for movie in sorted(matches, key=lambda movie: movie['id'])[:5]:
             print(f"{movie['id']}. {movie['title']}")

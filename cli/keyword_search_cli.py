@@ -1,41 +1,40 @@
 #!/usr/bin/env python3
 
 import argparse
-import json
-import string
 
-def search_movies(query: str) -> None:
-    print(f'Searching for: {query}')
-    with open('data/movies.json', 'r') as f:
-        movies = json.load(f)
-        matches = []
+from lib.keyword_search import build_command, search_command, tf_command
 
-        # this translation strips the punctuation
-        translator = str.maketrans('', '', string.punctuation)
-
-        # iterate over movies in movie list
-        for movie in movies['movies']:
-            q = query.translate(translator).lower().split()
-            m = movie['title'].translate(translator).lower().split()
-            if any(token in m for token in q):
-                matches.append(movie)
-        for movie in sorted(matches, key=lambda movie: movie['id'])[:5]:
-            print(f"{movie['id']}. {movie['title']}")
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Keyword Search CLI")
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
 
+    subparsers.add_parser("build", help="Build the inverted index")
+
     search_parser = subparsers.add_parser("search", help="Search movies using BM25")
     search_parser.add_argument("query", type=str, help="Search query")
+
+    tf_parser = subparsers.add_parser("tf", help="Get term frequency in a document")
+    tf_parser.add_argument("doc_id", type=int, help="Document ID")
+    tf_parser.add_argument("term", type=str, help="Term to search for")
 
     args = parser.parse_args()
 
     match args.command:
+        case "build":
+            print("Building inverted index...")
+            build_command()
+            print("Inverted index built successfully.")
         case "search":
-            search_movies(args.query)
+            print("Searching for:", args.query)
+            results = search_command(args.query)
+            for i, res in enumerate(results, 1):
+                print(f"{i}. ({res['id']}) {res['title']}")
+        case "tf":
+            tf_command(args.doc_id, args.term)
         case _:
             parser.print_help()
+
 
 if __name__ == "__main__":
     main()
